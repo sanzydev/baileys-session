@@ -91,7 +91,7 @@ export const useSqlAuthState = async (config: {
 
     // Read and initialize creds, or use default if not found
     const credsData: mysqlData | null = await readData('creds');
-    const creds: AuthenticationCreds = credsData ? JSON.parse(credsData.value, BufferJSON.reviver) : initAuthCreds();
+    const creds: AuthenticationCreds = credsData && credsData.value ? JSON.parse(credsData.value, BufferJSON.reviver) : initAuthCreds();
 
     return {
         state: {
