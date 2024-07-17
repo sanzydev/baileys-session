@@ -43,7 +43,7 @@ export const useSqlAuthState = async (config: {
         const [credsRows]: any = await connection.execute(`SELECT * FROM \`${table}\` WHERE id = 'creds'`);
         if (credsRows.length === 0) {
             // Insert initial creds entry if not found
-            await connection.execute(`INSERT INTO \`${table}\` (id, session) VALUES ('creds', ?)`, [sessionName]);
+            await connection.execute(`INSERT INTO \`${table}\` (id, value, session) VALUES ('creds', ?, ?)`, [JSON.stringify(initAuthCreds(), BufferJSON.replacer), sessionName]);
         }
     };
 
@@ -90,7 +90,7 @@ export const useSqlAuthState = async (config: {
 
     // Read and initialize creds, or use default if not found
     const credsData: mysqlData | null = await readData('creds');
-    const creds: AuthenticationCreds = credsData ? credsData : initAuthCreds();
+    const creds: AuthenticationCreds = credsData && credsData.value ? credsData.value : initAuthCreds();
 
     return {
         state: {
