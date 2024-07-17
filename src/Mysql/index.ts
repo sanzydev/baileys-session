@@ -28,7 +28,7 @@ export const useSqlAuthState = async (config: {
     const table = tableName ?? 'amiruldev_auth';
     const sessionName = session ?? `session_${Date.now()}`;
 
-    // Function to ensure session and create creds table if not exists
+    // Function to ensure session and create creds entry if not exists
     const ensureSession = async () => {
         // Create table if not exists
         await connection.execute(`
@@ -42,6 +42,7 @@ export const useSqlAuthState = async (config: {
         // Check if creds entry exists
         const [credsRows]: any = await connection.execute(`SELECT * FROM \`${table}\` WHERE id = 'creds'`);
         if (credsRows.length === 0) {
+            // Insert initial creds entry if not found
             await connection.execute(`INSERT INTO \`${table}\` (id, session) VALUES ('creds', ?)`, [sessionName]);
         }
     };
@@ -89,7 +90,8 @@ export const useSqlAuthState = async (config: {
     };
 
     // Read and initialize creds, or use default if not found
-    const creds: AuthenticationCreds = (await readData('creds')) || initAuthCreds();
+    const credsData: mysqlData | null = await readData('creds');
+    const creds: AuthenticationCreds = credsData ? JSON.parse(credsData.value, BufferJSON.reviver) : initAuthCreds();
 
     return {
         state: {
@@ -124,16 +126,16 @@ export const useSqlAuthState = async (config: {
             }
         },
         saveCreds: async () => {
-            await writeData('creds', creds); // Save creds to the database
+            await writeData('creds', creds);
         },
         clear: async () => {
-            await clearAll(); // Clear non-creds data
+            await clearAll();
         },
         removeCreds: async () => {
-            await removeAll(); // Remove all data including creds
+            await removeAll();
         },
         query: async (tableName: string, docId: string) => {
-            return await query(tableName, docId); // Query data from the database
+            return await query(tableName, docId);
         }
     };
 };
