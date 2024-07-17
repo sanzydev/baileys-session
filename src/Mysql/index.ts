@@ -28,7 +28,6 @@ export const useSqlAuthState = async (config: {
     const table = tableName ?? 'amiruldev_auth';
     const sessionName = session ?? `session_${Date.now()}`;
 
-    // logic auto create table
     await connection.execute(`
         CREATE TABLE IF NOT EXISTS \`${table}\` (
             id VARCHAR(255) PRIMARY KEY,
@@ -51,7 +50,7 @@ export const useSqlAuthState = async (config: {
         return rows.length > 0 ? rows[0] : null;
     };
 
-    const readData = async (id: string) => {
+    const readData = async (id: string): Promise<any> => {
         const data = await query(table, id);
         if (!data || !data.value) {
             return null;
@@ -124,7 +123,7 @@ export const useSqlAuthState = async (config: {
             await removeAll();
         },
         query: async (tableName: string, docId: string) => {
-            return await query(tableName, docId);
+            return await query(tableName, docId); 
         }
     };
 };
