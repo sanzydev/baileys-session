@@ -61,8 +61,7 @@ export const useSqlAuthState = async (config: {
         if (!data || !data.value) {
             return null;
         }
-        const creds = typeof data.value === 'object' ? JSON.stringify(data.value) : data.value;
-        return JSON.parse(creds, BufferJSON.reviver);
+        return JSON.parse(data.value, BufferJSON.reviver);
     };
 
     // Function to write data to the database
@@ -91,7 +90,7 @@ export const useSqlAuthState = async (config: {
 
     // Read and initialize creds, or use default if not found
     const credsData: mysqlData | null = await readData('creds');
-    const creds: AuthenticationCreds = credsData && credsData.value ? JSON.parse(credsData.value, BufferJSON.reviver) : initAuthCreds();
+    const creds: AuthenticationCreds = credsData ? credsData : initAuthCreds();
 
     return {
         state: {
