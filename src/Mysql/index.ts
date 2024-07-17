@@ -57,7 +57,8 @@ export const useSqlAuthState = async (config: {
         if (!data || !data.value) {
             return null;
         }
-        return JSON.parse(data.value, BufferJSON.reviver);
+        const creds = typeof data.value === 'string' ? data.value : JSON.stringify(data.value);
+        return JSON.parse(creds, BufferJSON.reviver);
     };
 
     const writeData = async (id: string, value: object) => {
