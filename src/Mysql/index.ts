@@ -28,28 +28,33 @@ export const useSqlAuthState = async (config: {
     const table = tableName ?? 'amiruldev_auth';
     const sessionName = session ?? `session_${Date.now()}`;
 
-    await connection.execute(`
-        CREATE TABLE IF NOT EXISTS \`${table}\` (
-            id VARCHAR(255) PRIMARY KEY,
-            value JSON,
-            session VARCHAR(255)
-        )
-    `);
-    
+    // Function to ensure session and create creds table if not exists
     const ensureSession = async () => {
-        const [rows]: any = await connection.execute(`SELECT DISTINCT session FROM \`${table}\``);
-        if (rows.length === 0) {
+        // Create table if not exists
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS \`${table}\` (
+                id VARCHAR(255) PRIMARY KEY,
+                value JSON,
+                session VARCHAR(255)
+            )
+        `);
+
+        // Check if creds entry exists
+        const [credsRows]: any = await connection.execute(`SELECT * FROM \`${table}\` WHERE id = 'creds'`);
+        if (credsRows.length === 0) {
             await connection.execute(`INSERT INTO \`${table}\` (id, session) VALUES ('creds', ?)`, [sessionName]);
         }
     };
-    
+
     await ensureSession();
 
+    // Function to query data from the database
     const query = async (tableName: string, docId: string): Promise<mysqlData | null> => {
         const [rows]: any = await connection.execute(`SELECT * FROM \`${tableName}\` WHERE id = ?`, [`${sessionName}-${docId}`]);
         return rows.length > 0 ? rows[0] : null;
     };
 
+    // Function to read and parse data
     const readData = async (id: string): Promise<any> => {
         const data = await query(table, id);
         if (!data || !data.value) {
@@ -59,6 +64,7 @@ export const useSqlAuthState = async (config: {
         return JSON.parse(creds, BufferJSON.reviver);
     };
 
+    // Function to write data to the database
     const writeData = async (id: string, value: object) => {
         const valueFixed = JSON.stringify(value, BufferJSON.replacer);
         await connection.execute(
@@ -67,18 +73,22 @@ export const useSqlAuthState = async (config: {
         );
     };
 
+    // Function to remove data from the database
     const removeData = async (id: string) => {
         await connection.execute(`DELETE FROM \`${table}\` WHERE id = ?`, [`${sessionName}-${id}`]);
     };
 
+    // Function to clear all non-creds data
     const clearAll = async () => {
         await connection.execute(`DELETE FROM \`${table}\` WHERE session = ? AND id != 'creds'`, [sessionName]);
     };
 
+    // Function to remove all data including creds
     const removeAll = async () => {
         await connection.execute(`DELETE FROM \`${table}\` WHERE session = ?`, [sessionName]);
     };
 
+    // Read and initialize creds, or use default if not found
     const creds: AuthenticationCreds = (await readData('creds')) || initAuthCreds();
 
     return {
@@ -114,16 +124,16 @@ export const useSqlAuthState = async (config: {
             }
         },
         saveCreds: async () => {
-            await writeData('creds', creds);
+            await writeData('creds', creds); // Save creds to the database
         },
         clear: async () => {
-            await clearAll();
+            await clearAll(); // Clear non-creds data
         },
         removeCreds: async () => {
-            await removeAll();
+            await removeAll(); // Remove all data including creds
         },
         query: async (tableName: string, docId: string) => {
-            return await query(tableName, docId); 
+            return await query(tableName, docId); // Query data from the database
         }
     };
 };
