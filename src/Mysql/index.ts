@@ -26,7 +26,7 @@ export const useSqlAuthState = async (config: {
     const connection = await mysql.createConnection({ host, user, password, database });
 
     const table = tableName ?? 'amiruldev_auth';
-    const sessionName = session ?? `session_${Date.now()}`;
+    const sessionName = session ?? `session_`;
 
     // Create table if not exists
     await connection.execute(`
